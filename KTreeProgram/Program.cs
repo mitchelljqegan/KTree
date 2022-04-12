@@ -19,34 +19,19 @@ namespace KTreeProgram
             //KTree<Point2D> ktree = KTree<Point2D>.Open("Point2D.ktree");
             //ktree.Print();
 
-            //KTree<Pixel> ktree = KTree<Pixel>.Open("image.ktree");
-            //SaveClusteredImage(ktree, 0);
-            //SaveClusteredImage(ktree, 1);
-            //SaveClusteredImage(ktree, 2);
-            //SaveClusteredImage(ktree, 3);
-            //SaveClusteredImage(ktree, 4);
+            KTree<Pixel> ktree = KTree<Pixel>.Open("image.ktree");
+            SaveClusteredImage(ktree, 0);
+            SaveClusteredImage(ktree, 1);
+            SaveClusteredImage(ktree, 2);
+            SaveClusteredImage(ktree, 3);
+            SaveClusteredImage(ktree, 4);
+            SaveClusteredImage(ktree, 5);
+            SaveClusteredImage(ktree, 6);
+            SaveClusteredImage(ktree, 7);
+            SaveClusteredImage(ktree, 8);
+            SaveClusteredImage(ktree, 9);
         }
 
-        private static void ConstructAndSavePixel(int order)
-        {
-            // Generate observation array from image file
-            Bitmap image = new("image.jpg");
-            Pixel[] observations = new Pixel[image.Width * image.Height];
-
-            for (int x = 0; x < image.Width; x++)
-            {
-                for (int y = 0; y < image.Height; y++)
-                {
-                    Color pixel = image.GetPixel(x, y);
-                    observations[x * image.Height + y] = new(x, y, pixel.R, pixel.G, pixel.B);
-                }
-            }
-
-            KTree<Pixel> kTree = new(observations, order);
-
-            kTree = kTree.Construct();
-            kTree.Save("image.ktree");
-        }
         private static void ConstructAndSavePoint1D(int order, int minValue, int maxValue, int numValues)
         {
             Point1D[] observations = GenerateRandom1DArray(minValue, maxValue, numValues);
