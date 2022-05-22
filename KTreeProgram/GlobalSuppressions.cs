@@ -5,4 +5,5 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:KTreeProgram.Program.SaveClusteredImage(KTree.KTree{KTreeDataTypes.Pixel},System.Int32)")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:KTreeProgram.Program.GetPixels(System.String)~KTreeDataTypes.Pixel[]")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:KTreeProgram.Program.GenerateClusteredImages(KTree.KTree{KTreeDataTypes.Pixel},System.String)")]
