@@ -1,4 +1,5 @@
 ﻿using KTreeDataTypes;
+using System.Collections.Generic;
 using static RandomArray.RandomArray;
 
 namespace KTree
@@ -20,13 +21,13 @@ namespace KTree
         /// <summary>
         /// The observations to be clustered.
         /// </summary>
-        public KTreeKey<T>[] Observations { get; set; }
+        public List<KTreeKey<T>> Observations { get; set; }
 
         /// <summary>
         /// Public constructor to create a KMeans object.
         /// </summary>
         /// <param name="observations">The observations to be clustered.</param>
-        public KMeans(KTreeKey<T>[] observations)
+        public KMeans(List<KTreeKey<T>> observations)
         {
             Observations = observations;
             Clusters = new Cluster<T>[K];
@@ -41,24 +42,26 @@ namespace KTree
         {
             AssignObservations();
 
-            bool assignmentsChanged = false;
-
-            foreach (Cluster<T> cluster in Clusters)
-            {
-                if (cluster.AssignmentChanged())
-                {
-                    assignmentsChanged = true;
-                    break;
-                }
-            }
-
-            if (assignmentsChanged)
+            if (AssignmentsChanged())
             {
                 UpdateMeans();
                 Partition();
             }
 
             return Clusters;
+        }
+
+        private bool AssignmentsChanged()
+        {
+            foreach (Cluster<T> cluster in Clusters)
+            {
+                if (cluster.AssignmentChanged())
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -68,80 +71,42 @@ namespace KTree
         {
             foreach (KTreeKey<T> observation in Observations)
             {
-                double[] distances = GetDistances(observation);
-                Clusters[GetIndexOfMin(distances)].AddKTreeKey(observation);
+                GetNearest(observation).AddKTreeKey(observation);
             }
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="observation"></param>
-        /// <returns></returns>
-        private double[] GetDistances(KTreeKey<T> observation)
+        
+        private Cluster<T> GetNearest(KTreeKey<T> observation)
         {
-            double[] distances = new double[K];
+            double minimum = observation.Key.DistanceFrom(Clusters[0].Mean);
+            Cluster<T> nearest = Clusters[0];
 
-            for (int j = 0; j < K; j++)
+            for (int i = 1; i < Clusters.Length; i++)
             {
-                distances[j] = observation.Key.DistanceFrom(Clusters[j].Mean);
-            }
+                double distance = observation.Key.DistanceFrom(Clusters[i].Mean);
 
-            return distances;
-        }
-
-        /// <summary>
-        /// Gets the index of the minimal distance value in an array. If there are multiple minimums, use that of the cluster with the least observations.
-        /// </summary>
-        /// <param name="distances">An array of distance values.</param>
-        /// <returns>The index of the minimal distance value.</returns>
-        private int GetIndexOfMin(double[] distances)
-        {
-            double minimum = distances[0];
-            int minimumIndex = 0;
-
-            for (int i = 1; i < K; i++)
-            {
-                if (distances[i] < minimum)
+                if ((distance < minimum) || (distance == minimum && Clusters[i].Observations.Count < nearest.Observations.Count))
                 {
-                    minimum = distances[i];
-                    minimumIndex = i;
-                }
-
-                // If more than one minimum
-                else if (distances[i] == minimum)
-                {
-                    for (int j = 0; j < Observations.Length; j++)
-                    {
-                        // If second minimum belongs to a cluster with less observations
-                        if (Clusters[i].Observations[j] == default && Clusters[minimumIndex].Observations[j] != default)
-                        {
-                            minimum = distances[i];
-                            minimumIndex = i;
-                        }
-                    }
+                    minimum = distance;
+                    nearest = Clusters[i];
                 }
             }
 
-            return minimumIndex;
+            return nearest;
         }
-
+        
         /// <summary>
         /// Initialise clusters by choosing random observations to be initial means.
         /// </summary>
         private void InitClusers()
         {
-            int[] randomIndexes = GenerateRandomIntArray(0, Observations.Length - 1, K);
+            int[] randomIndexes = GenerateRandomIntArray(0, Observations.Count - 1, K);
 
             for (int i = 0; i < K; i++)
             {
-                Clusters[i] = new Cluster<T>(Observations[randomIndexes[i]].Key, Observations.Length);
+                Clusters[i] = new Cluster<T>(Observations[randomIndexes[i]].Key, Observations.Count);
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         private void UpdateMeans()
         {
             foreach (Cluster<T> cluster in Clusters)

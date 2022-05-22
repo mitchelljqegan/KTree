@@ -1,12 +1,14 @@
 ﻿using KTreeDataTypes;
 using System;
+using System.Collections.Generic;
 
 namespace KTree
 {
     [Serializable]
     public class KTreeKey<T> : IComparable, ICloneable where T : KTreeDataType<T>
     {
-        public KTree<T> Child { get; set; }
+        internal KTree<T> Child { get; set; }
+
         public T Key { get; set; }
 
         public KTreeKey(T key)
@@ -20,7 +22,7 @@ namespace KTree
             Child = child;
         }
 
-        public KTreeKey(KTree<T> node, T key, KTreeKey<T>[] childKeys)
+        public KTreeKey(KTree<T> node, T key, List<KTreeKey<T>> childKeys)
         {
             Key = key;
             Child = new(node, childKeys);
