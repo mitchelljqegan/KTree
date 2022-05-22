@@ -1,6 +1,8 @@
 ﻿using KTree;
 using KTreeDataTypes;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using static RandomArray.RandomArray;
 
 namespace KTreeProgram
@@ -11,46 +13,61 @@ namespace KTreeProgram
         {
             int order = 5;
 
-            //ConstructAndSavePoint1D(order, 0, 20, 10);
-            //ConstructAndSavePoint2D(order, 0, 20, 10);
-            //ConstructAndSavePixel(order);
-
-            //KTree<Point1D> ktree = KTree<Point1D>.Open("Point1D.ktree");
-            //KTree<Point2D> ktree = KTree<Point2D>.Open("Point2D.ktree");
-            //ktree.Print();
-
-            KTree<Pixel> ktree = KTree<Pixel>.Open("image.ktree");
-            SaveClusteredImage(ktree, 0);
-            SaveClusteredImage(ktree, 1);
-            SaveClusteredImage(ktree, 2);
-            SaveClusteredImage(ktree, 3);
-            SaveClusteredImage(ktree, 4);
-            SaveClusteredImage(ktree, 5);
-            SaveClusteredImage(ktree, 6);
-            SaveClusteredImage(ktree, 7);
-            SaveClusteredImage(ktree, 8);
-            SaveClusteredImage(ktree, 9);
-        }
-
-        private static void ConstructAndSavePoint1D(int order, int minValue, int maxValue, int numValues)
-        {
-            Point1D[] observations = GenerateRandom1DArray(minValue, maxValue, numValues);
+            // 1-D Point K-tree
+            /*
+            Point1D[] observations = GenerateRandom1DArray(0, 20, 10);
             KTree<Point1D> kTree = new(observations, order);
             kTree = kTree.Construct();
-            kTree.Save("Point1D.ktree");
-        }
+            //kTree.Save("Point1D.ktree");
 
-        private static void ConstructAndSavePoint2D(int order, int minValue, int maxValue, int numValues)
-        {
-            Point2D[] observations = GenerateRandom2DArray(minValue, maxValue, numValues);
+            //kTree = KTree<Point1D>.Open("Point1D.ktree");
+            kTree.Print();
+            */
+            // 2-D Point K-tree
+            /*
+            Point2D[] observations = GenerateRandom2DArray(0, 20, 10);
             KTree<Point2D> kTree = new(observations, order);
             kTree = kTree.Construct();
-            kTree.Save("Point2D.ktree");
+            //kTree.Save("Point2D.ktree");
+
+            //kTree = KTree<Point2D>.Open("Point2D.ktree");
+            kTree.Print();
+            */
+            // Pixel K-tree
+            
+            string imageFilePath = "image.jpg";
+            Pixel[] observations = GetPixels(imageFilePath);
+            KTree<Pixel> kTree = new(observations, order);
+            kTree = kTree.Construct();
+            //string kTreeFilePath = string.Format("{0}.ktree", Path.GetFileNameWithoutExtension(imageFilePath));
+            //kTree.Save(kTreeFilePath);
+
+            //kTree = KTree<Pixel>.Open(kTreeFilePath);
+            GenerateClusteredImages(kTree, imageFilePath);
+            
         }
 
-        private static void SaveClusteredImage(KTree<Pixel> ktree, int depth)
+        private static Pixel[] GetPixels(string filePath)
         {
-            Bitmap image = new("image.jpg");
+            Bitmap image = new(filePath);
+            Pixel[] observations = new Pixel[image.Width * image.Height];
+
+            for (int x = 0; x < image.Width; x++)
+            {
+                for (int y = 0; y < image.Height; y++)
+                {
+                    Color pixel = image.GetPixel(x, y);
+                    observations[x * image.Height + y] = new(x, y, pixel.R, pixel.G, pixel.B);
+                }
+            }
+
+            return observations;
+        }
+
+        private static void GenerateClusteredImages(KTree<Pixel> ktree, string filePath)
+        {
+            Bitmap image = new(filePath);
+            IEnumerator<KTreeKey<Pixel>>[] meansEnumerators = new IEnumerator<KTreeKey<Pixel>>[image.Width * image.Height];
 
             for (int x = 0; x < image.Width; x++)
             {
@@ -58,13 +75,35 @@ namespace KTreeProgram
                 {
                     Color pixel = image.GetPixel(x, y);
                     Pixel observation = new(x, y, pixel.R, pixel.G, pixel.B);
-
-                    Pixel mean = ktree.FindMeanOf(observation, depth).Key;
-                    image.SetPixel(observation.X, observation.Y, Color.FromArgb((int)mean.R, (int)mean.G, (int)mean.B));
+                    meansEnumerators[x * image.Height + y] = ktree.ClusterMeansOf(observation).GetEnumerator();
                 }
             }
 
-            image.Save(string.Format("image-clustered{0}.jpg", depth));
+            int depth = 0;
+            bool finished = false;
+
+            while (!finished)
+            {
+                for (int i = 0; i < meansEnumerators.Length; i++)
+                {
+                    if (meansEnumerators[i].MoveNext())
+                    {
+                        Pixel mean = meansEnumerators[i].Current.Key;
+                        image.SetPixel(i / image.Height, i % image.Height, Color.FromArgb((int)mean.R, (int)mean.G, (int)mean.B));
+                    }
+                    else
+                    {
+                        finished = true;
+                        break;
+                    }
+                }
+
+                if (!finished)
+                {
+                    string clusterFilePath = string.Format("{0}-clustered{1}{2}", Path.GetFileNameWithoutExtension(filePath), depth++, Path.GetExtension(filePath));
+                    image.Save(clusterFilePath);
+                }
+            }
         }
     }
 }
